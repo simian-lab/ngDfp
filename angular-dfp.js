@@ -301,6 +301,12 @@ angular.module('ngDfp', [])
           googletag.cmd.push(function() {
             $window.googletag.pubads().refresh(slots);
           });
+        },
+
+        addNewSlot: function() {
+          var slot = arguments;
+          var dimensions = JSON.parse(arguments[1]);
+          self.defineSlot(arguments[0], dimensions, arguments[2]);
         }
       };
     }];
