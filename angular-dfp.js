@@ -73,6 +73,23 @@ angular.module('ngDfp', [])
       gads.onload = callback;
     };
 
+    this._initSlot = function (slot, id) {
+      definedSlots[id] = googletag.defineSlot.apply(null, slot).addService(googletag.pubads());
+      if(sizeMapping[id]){
+        definedSlots[id].defineSizeMapping(sizeMapping[id]);
+      }
+
+      /**
+       If sent, set the slot specific targeting
+       */
+      var slotTargeting = slot.getSlotTargeting();
+      if(slotTargeting){
+        angular.forEach(slotTargeting, function (value, key) {
+          definedSlots[id].setTargeting(value.id, value.value);
+        });
+      }
+    };
+
     /**
      Initializes and configures the slots that were added with defineSlot.
      */
@@ -80,22 +97,7 @@ angular.module('ngDfp', [])
       var self = this;
       // when the GPT JavaScript is loaded, it looks through the array and executes all the functions in order
       googletag.cmd.push(function() {
-        angular.forEach(slots, function (slot, id) {
-          definedSlots[id] = googletag.defineSlot.apply(null, slot).addService(googletag.pubads());
-          if(sizeMapping[id]){
-            definedSlots[id].defineSizeMapping(sizeMapping[id]);
-          }
-
-          /**
-           If sent, set the slot specific targeting
-           */
-	  var slotTargeting = slot.getSlotTargeting();
-          if(slotTargeting){
-            angular.forEach(slotTargeting, function (value, key) {
-              definedSlots[id].setTargeting(value.id, value.value);
-            });
-          }
-        });
+        angular.forEach(slots, self._initSlot);
 
 	      /**
          Set the page targeting key->values
@@ -301,6 +303,12 @@ angular.module('ngDfp', [])
           googletag.cmd.push(function() {
             $window.googletag.pubads().refresh(slots);
           });
+        },
+
+        addNewSlot: function() {
+          var slot = arguments;
+          var dimensions = JSON.parse(arguments[1]);
+          self.defineSlot(arguments[0], dimensions, arguments[2]);
         }
       };
     }];
@@ -418,6 +426,26 @@ angular.module('ngDfp', [])
               }, scope.timeout);
             });
           });
+        });
+      }
+    };
+  }])
+
+  .directive('ngDfpDynamicAd', ['DoubleClick', function(DoubleClick) {
+    return {
+      restrict: 'A',
+      template: '<div data-ng-dfp-ad="{{adId}}" dfp-ad-refresh="{{refresh}}" dfp-ad-refresh-interval="{{interval}}" dfp-ad-refresh-timeout="{{timeout}}"></div>',
+      scope: {
+        adId: '@ngDfpDynamicAd',
+        refresh: '@ngDfpAdRefresh',
+        interval: '@ngDfpAdRefreshInterval',
+        timeout: '@ngDfpAdRefreshTimeout',
+        slot: '@ngDfpSlot',
+        size: '@ngDfpSize'
+      },
+      controller: function ($scope) {
+        $scope.$watch('adId', function(id) {
+          DoubleClick.addNewSlot($scope.slot, $scope.size, $scope.adId);
         });
       }
     };
