@@ -73,14 +73,7 @@ angular.module('ngDfp', [])
       gads.onload = callback;
     };
 
-    /**
-     Initializes and configures the slots that were added with defineSlot.
-     */
-    this._initialize = function () {
-      var self = this;
-      // when the GPT JavaScript is loaded, it looks through the array and executes all the functions in order
-      googletag.cmd.push(function() {
-        angular.forEach(slots, function (slot, id) {
+    this._initSlot = function (slot, id) {
           definedSlots[id] = googletag.defineSlot.apply(null, slot).addService(googletag.pubads());
           if(sizeMapping[id]){
             definedSlots[id].defineSizeMapping(sizeMapping[id]);
@@ -95,7 +88,16 @@ angular.module('ngDfp', [])
               definedSlots[id].setTargeting(value.id, value.value);
             });
           }
-        });
+    };
+
+    /**
+     Initializes and configures the slots that were added with defineSlot.
+     */
+    this._initialize = function () {
+      var self = this;
+      // when the GPT JavaScript is loaded, it looks through the array and executes all the functions in order
+      googletag.cmd.push(function() {
+        angular.forEach(slots, self._initSlot);
 
 	      /**
          Set the page targeting key->values
