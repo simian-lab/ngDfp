@@ -308,7 +308,20 @@ angular.module('ngDfp', [])
         addNewSlot: function() {
           var slot = arguments;
           var dimensions = JSON.parse(arguments[1]);
-          self.defineSlot(arguments[0], dimensions, arguments[2]);
+          var adId = arguments[2];
+          var targeting = JSON.parse(arguments[3]);
+          var mapping = JSON.parse(arguments[4]);
+
+          if(mapping.length > 0) {
+
+            mapping.reverse();
+
+            mapping.forEach(function(element) {
+              self.defineSizeMapping(adId).addSize(element[0], element[1]);
+            });
+
+            self.defineSlot(arguments[0], dimensions, arguments[2], targeting);
+          }
         }
       };
     }];
@@ -437,17 +450,19 @@ angular.module('ngDfp', [])
       template: '<div data-ng-dfp-ad="{{adId}}" dfp-ad-refresh="{{refresh}}" dfp-ad-refresh-interval="{{interval}}" dfp-ad-refresh-timeout="{{timeout}}"></div>',
       scope: {
         adId: '@ngDfpDynamicAd',
-        refresh: '@ngDfpAdRefresh',
         interval: '@ngDfpAdRefreshInterval',
-        timeout: '@ngDfpAdRefreshTimeout',
+        mapping: "@ngDfpMapping",
+        refresh: '@ngDfpAdRefresh',
+        size: '@ngDfpSize',
         slot: '@ngDfpSlot',
-        size: '@ngDfpSize'
+        targeting: '@ngDfpTargeting',
+        timeout: '@ngDfpAdRefreshTimeout'
       },
       controller: function ($scope) {
         $scope.$watch('adId', function(id) {
-          DoubleClick.addNewSlot($scope.slot, $scope.size, $scope.adId);
+          DoubleClick.addNewSlot($scope.slot, $scope.size, $scope.adId, $scope.targeting, $scope.mapping);
         });
       }
     };
   }]);
- 
+
