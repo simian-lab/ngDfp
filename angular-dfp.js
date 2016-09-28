@@ -43,6 +43,12 @@ angular.module('ngDfp', [])
     var collapseEmptyDivs = false;
 
     /**
+     * If true, enables Single Request Architecture (SRA)
+     * @type {boolean}
+     */
+    var enableSingleRequest = true;
+
+    /**
      This initializes the dfp script in the document. Loosely based on angular-re-captcha's
      method of loading the script with promises.
 
@@ -113,7 +119,9 @@ angular.module('ngDfp', [])
           googletag.pubads().collapseEmptyDivs();
         }
 
-        googletag.pubads().enableSingleRequest();
+        if (enableSingleRequest) {
+          googletag.pubads().enableSingleRequest();
+        }
         googletag.enableServices();
 
         googletag.pubads().addEventListener('slotRenderEnded', self._slotRenderEnded);
@@ -221,6 +229,14 @@ angular.module('ngDfp', [])
      */
     this.collapseEmptyDivs = function () {
       collapseEmptyDivs = true;
+    };
+
+    /**
+     * Set Single Request Architecture
+     * @param isEnable
+     */
+    this.setSingleRequest = function (isEnable) {
+      enableSingleRequest = isEnable;
     };
 
     // Public factory API.
@@ -379,6 +395,7 @@ angular.module('ngDfp', [])
           element.html('');
 
           var intervalPromise = null;
+          var timeoutPromise = null;
 
           DoubleClick.getSlot(id).then(function (slot) {
             var size = slot.getSize();
@@ -420,9 +437,6 @@ angular.module('ngDfp', [])
                 return;
               }
 
-              // Cancel previous interval
-              $interval.cancel(intervalPromise);
-
               intervalPromise = $interval(function () {
                 DoubleClick.refreshAds(id);
               }, scope.interval);
@@ -434,9 +448,17 @@ angular.module('ngDfp', [])
                 return;
               }
 
-              $timeout(function () {
+              timeoutPromise = $timeout(function () {
                 DoubleClick.refreshAds(id);
               }, scope.timeout);
+            });
+
+            // Cancel $interval and $timeout service when DOM destroy
+            scope.$on('$destroy', function() {
+              $interval.cancel(intervalPromise);
+              $timeout.cancel(timeoutPromise);
+              intervalPromise = null;
+              timeoutPromise = null;
             });
           });
         });
